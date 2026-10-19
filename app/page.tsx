@@ -210,6 +210,22 @@ export default function Home() {
           Keep your groceries fresh and reduce food waste.
         </p>
 
+        <nav className="mt-6 flex gap-6 border-b border-gray-200 pb-3">
+          <a
+            href="/"
+            className="border-b-2 border-green-700 pb-2 font-semibold text-green-700"
+          >
+            🥬 My Fridge
+          </a>
+
+          <a
+            href="/household"
+            className="pb-2 text-gray-600 hover:text-green-700"
+          >
+            👨‍👩‍👧‍👦 Household
+          </a>
+        </nav>
+
         <div className="mt-8 rounded-xl bg-white p-6 shadow">
           <h2 className="mb-4 text-xl font-semibold">
             Add a grocery item
