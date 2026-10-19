@@ -322,12 +322,22 @@ export default function Home() {
             </select>
           </div>
 
-          <input
-            type="date"
-            className="mb-3 w-full rounded border p-3"
-            value={expiry}
-            onChange={(e) => setExpiry(e.target.value)}
-          />
+          <div className="mb-3">
+            <label
+              htmlFor="expiry-date"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              Expiry Date
+            </label>
+
+            <input
+              id="expiry-date"
+              type="date"
+              className="w-full rounded border p-3"
+              value={expiry}
+              onChange={(e) => setExpiry(e.target.value)}
+            />
+          </div>
 
           <button
             onClick={addFood}
