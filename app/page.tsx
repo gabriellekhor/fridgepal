@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -18,135 +17,103 @@ type Food = {
 
 
 export default function Home() {
+  const router = useRouter();
   const [foods, setFoods] = useState<Food[]>([]);
-  const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState("expiring");
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [databaseError, setDatabaseError] = useState("");
-  const [checkingAuth, setCheckingAuth] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    void findHousehold();
-    // Initial household lookup after the page loads.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    try {
-      const savedFoods = localStorage.getItem("fridgepal-foods");
-
-      if (savedFoods) {
-        setFoods(JSON.parse(savedFoods) as Food[]);
-      }
-    } catch (error) {
-      console.error("Could not load groceries:", error);
-    } finally {
-      setLoaded(true);
-    }
-  }, []);
-  
-  useEffect(() => {
-    if (!loaded) return;
-
-    localStorage.setItem(
-      "fridgepal-foods",
-      JSON.stringify(foods)
-    );
-  }, [foods, loaded]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function checkAuth() {
-      const { data, error } = await supabase.auth.getUser();
-
-      if (!active) return;
-
-      if (error || !data.user) {
-        setIsAuthenticated(false);
-        router.replace("/login");
-      } else {
-        setIsAuthenticated(true);
-      }
-
-      setCheckingAuth(false);
-    }
-
-    void checkAuth();
-
-    return () => {
-      active = false;
-    };
-  }, [router]);
-
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [expiry, setExpiry] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [unit, setUnit] = useState("pieces");
   const [category, setCategory] = useState("Other");
 
-  async function findHousehold() {
-    setDatabaseError("");
+  useEffect(() => {
+    let active = true;
 
-    const { data: userData, error: userError } =
-      await supabase.auth.getUser();
+    async function loadInventory() {
+      try {
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (!active) return;
+        if (authError || !authData.user) {
+          router.replace("/login");
+          return;
+        }
 
-    if (userError || !userData.user) {
-      setDatabaseError("Please sign in to FridgePal first.");
-      return;
+        const { data: membership, error: membershipError } = await supabase
+          .from("household_members")
+          .select("household_id")
+          .eq("user_id", authData.user.id)
+          .limit(1)
+          .maybeSingle();
+        if (membershipError) throw membershipError;
+        if (!membership) {
+          setDatabaseError("Your account is not linked to a household yet.");
+          return;
+        }
+        setHouseholdId(membership.household_id);
+
+        const { data: groceries, error: groceriesError } = await supabase
+          .from("groceries")
+          .select("id, name, expiry, quantity, unit, category")
+          .eq("household_id", membership.household_id)
+          .order("expiry", { ascending: true });
+        if (groceriesError) throw groceriesError;
+        if (active) setFoods(groceries ?? []);
+      } catch (error) {
+        if (active) setDatabaseError(error instanceof Error ? error.message : "Could not load groceries.");
+      } finally {
+        if (active) setLoading(false);
+      }
     }
 
-    const { data, error } = await supabase
-      .from("household_members")
-      .select("household_id")
-      .eq("user_id", userData.user.id)
-      .limit(1)
-      .maybeSingle();
+    void loadInventory();
+    return () => { active = false; };
+  }, [router]);
 
+  async function addFood() {
+    const amount = Number(quantity);
+    if (!householdId || saving || !name.trim() || !expiry || !quantity.trim() ||
+        !Number.isFinite(amount) || amount <= 0) return;
+
+    setSaving(true);
+    setDatabaseError("");
+    const { data, error } = await supabase
+      .from("groceries")
+      .insert({ household_id: householdId, name: name.trim(), expiry,
+                quantity: amount, unit, category })
+      .select("id, name, expiry, quantity, unit, category")
+      .single();
+    setSaving(false);
     if (error) {
       setDatabaseError(error.message);
       return;
     }
-
-    if (!data) {
-      setDatabaseError("No household is linked to your account.");
-      return;
-    }
-
-    setHouseholdId(data.household_id);
-  }
-
-  function addFood() {
-    const amount = Number(quantity);
-
-    if (
-      !name.trim() ||
-      !expiry ||
-      !quantity.trim() ||
-      !Number.isFinite(amount) ||
-      amount <= 0
-    ) {
-      return;
-    }
-
-    const newFood: Food = {
-      id: Date.now(),
-      name: name.trim(),
-      expiry: expiry,
-      quantity: amount,
-      unit: unit,
-      category: category,
-    };
-
-    setFoods([...foods, newFood]);
-
+    setFoods(current => [...current, data]);
     setName("");
     setExpiry("");
     setQuantity("1");
     setUnit("pieces");
     setCategory("Other");
+  }
+
+  async function removeFood(id: number) {
+    if (!householdId || saving) return;
+    setSaving(true);
+    setDatabaseError("");
+    const { error } = await supabase
+      .from("groceries")
+      .delete()
+      .eq("id", id)
+      .eq("household_id", householdId);
+    setSaving(false);
+    if (error) {
+      setDatabaseError(error.message);
+      return;
+    }
+    setFoods(current => current.filter(food => food.id !== id));
   }
 
   function getStatus(date: string) {
@@ -214,24 +181,18 @@ export default function Home() {
       ? expiringFoods
       : freshFoods;
 
-  if (checkingAuth || !isAuthenticated) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-green-50 text-gray-700">
-        <p>Checking your login...</p>
-      </main>
-    );
+  if (loading) {
+    return <main className="min-h-screen bg-green-50 p-8 text-gray-900">Loading your fridge...</main>;
   }
 
   return (
     <main className="min-h-screen bg-green-50 p-8 text-gray-900">
       <div className="mx-auto mb-4 max-w-2xl">
-        {householdId ? (
+        {databaseError ? (
+          <p className="rounded-lg bg-red-100 p-3 text-sm text-red-700">{databaseError}</p>
+        ) : householdId ? (
           <p className="rounded-lg bg-green-100 p-3 text-sm text-green-800">
             ✓ Connected to your household database!
-          </p>
-        ) : databaseError ? (
-          <p className="rounded-lg bg-red-100 p-3 text-sm text-red-700">
-            {databaseError}
           </p>
         ) : (
           <p className="rounded-lg bg-yellow-100 p-3 text-sm text-yellow-800">
@@ -324,7 +285,8 @@ export default function Home() {
 
           <button
             onClick={addFood}
-            className="w-full rounded bg-green-700 p-3 text-white hover:bg-green-800"
+            disabled={!householdId || saving}
+            className="w-full rounded bg-green-700 p-3 text-white hover:bg-green-800 disabled:opacity-50"
           >
             Add Food
           </button>
@@ -414,9 +376,8 @@ export default function Home() {
             </div>
 
             <button
-              onClick={() =>
-                setFoods(foods.filter((item) => item.id !== food.id))
-              }
+              onClick={() => void removeFood(food.id)}
+              disabled={saving}
               className="rounded bg-red-100 px-3 py-2 text-sm text-red-700"
             >
               Remove
@@ -427,3 +388,5 @@ export default function Home() {
     </main>
   );
 }
+
+             
