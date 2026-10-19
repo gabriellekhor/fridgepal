@@ -34,24 +34,47 @@ export default function LoginPage() {
     setLoading(false);
   }
 
-  
 async function signIn() {
   setLoading(true);
   setMessage("");
 
   try {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data: authData, error: signInError } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setMessage(error.message);
+    if (signInError) {
+      setMessage(signInError.message);
       return;
     }
 
-    // Redirect to the FridgePal dashboard
-    router.replace("/");
+    if (!authData.user) {
+      setMessage("Could not verify your account.");
+      return;
+    }
+
+    // Check whether the user belongs to a household
+    const { data: membership, error: memberError } =
+      await supabase
+        .from("household_members")
+        .select("household_id")
+        .eq("user_id", authData.user.id)
+        .maybeSingle();
+
+    if (memberError) {
+      setMessage(memberError.message);
+      return;
+    }
+
+    if (membership) {
+      // Existing member: open fridge dashboard
+      router.replace("/");
+    } else {
+      // New user: create or join a household
+      router.replace("/household");
+    }
   } catch {
     setMessage("Something went wrong. Please try again.");
   } finally {

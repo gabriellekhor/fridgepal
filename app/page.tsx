@@ -21,6 +21,7 @@ export default function Home() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [activeTab, setActiveTab] = useState("expiring");
   const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [householdName, setHouseholdName] = useState("");
   const [databaseError, setDatabaseError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,6 +55,19 @@ export default function Home() {
           return;
         }
         setHouseholdId(membership.household_id);
+
+        const { data: household, error: householdError } =
+          await supabase
+            .from("households")
+            .select("name")
+            .eq("id", membership.household_id)
+            .single();
+
+        if (householdError) {
+          setDatabaseError(householdError.message);
+        } else {
+          setHouseholdName(household.name);
+        }
 
         const { data: groceries, error: groceriesError } = await supabase
           .from("groceries")
@@ -225,6 +239,22 @@ export default function Home() {
             👨‍👩‍👧‍👦 Household
           </a>
         </nav>
+
+        {householdId && (
+          <div className="mt-6 flex items-center gap-3 rounded-xl border border-green-200 bg-green-100 p-4">
+            <span className="text-2xl">🏠</span>
+
+            <div>
+              <p className="text-xs font-medium uppercase text-green-700">
+                Current Household
+              </p>
+
+              <p className="text-lg font-semibold text-green-900">
+                {householdName || "Loading household..."}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 rounded-xl bg-white p-6 shadow">
           <h2 className="mb-4 text-xl font-semibold">
