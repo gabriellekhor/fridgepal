@@ -121,43 +121,96 @@ export default function NotificationSettings() {
     }
   }
 
-  return (
-    <div className="mt-6 rounded-xl bg-white p-6 shadow">
-      <h2 className="mb-2 text-xl font-semibold">
-        🔔 Notification Settings
-      </h2>
+async function sendTestNotification() {
+  setLoading(true);
+  setMessage("");
 
-      <p className="mb-4 text-sm text-gray-600">
-        Receive alerts when groceries are about to expire.
+  try {
+    const { data, error } =
+      await supabase.auth.getSession();
+
+    if (error || !data.session) {
+      throw new Error("Please sign in first.");
+    }
+
+    const response = await fetch("/api/test-push", {
+      method: "POST",
+      headers: {
+        Authorization:
+          `Bearer ${data.session.access_token}`,
+      },
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.error || "Notification failed."
+      );
+    }
+
+    setMessage(
+      `Test notification sent to ${result.sent} device(s)!`
+    );
+  } catch (error) {
+    setMessage(
+      error instanceof Error
+        ? error.message
+        : "Could not send notification."
+    );
+  } finally {
+    setLoading(false);
+  }
+}
+
+return (
+  <div className="mt-6 rounded-xl bg-white p-6 shadow">
+    <h2 className="mb-2 text-xl font-semibold">
+      🔔 Notification Settings
+    </h2>
+
+    <p className="mb-4 text-sm text-gray-600">
+      Receive alerts when groceries are about to expire.
+    </p>
+
+    {!supported ? (
+      <p className="text-sm text-red-600">
+        Push notifications are not supported here.
+        On iPhone, open FridgePal from your Home Screen.
       </p>
-
-      {!supported ? (
-        <p className="text-sm text-red-600">
-          Push notifications are not supported here.
-          On iPhone, open FridgePal from your Home Screen.
-        </p>
-      ) : (
+    ) : (
+      <>
         <button
           onClick={enableNotifications}
           disabled={loading}
           className="w-full rounded bg-green-700 p-3 text-white disabled:opacity-50"
         >
-          
-        {loading
-        ? "Enabling..."
-        : subscribed
-        ? "Verify Notification Subscription"
-        : "Enable Notifications"}
-        
+          {loading
+            ? "Enabling..."
+            : subscribed
+            ? "Verify Notification Subscription"
+            : "Enable Notifications"}
         </button>
-      )}
 
-      {message && (
-        <p className="mt-3 text-sm text-green-700">
-          {message}
-        </p>
-      )}
-    </div>
-  );
+        {subscribed && (
+          <button
+            onClick={sendTestNotification}
+            disabled={loading}
+            className="mt-3 w-full rounded border border-green-700 p-3 text-green-700 disabled:opacity-50"
+          >
+            🔔 Send Test Notification
+          </button>
+        )}
+      </>
+    )}
+
+    {message && (
+      <p className="mt-3 text-sm text-green-700">
+        {message}
+      </p>
+    )}
+  </div>
+);
 }
+
 
