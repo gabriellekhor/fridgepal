@@ -139,14 +139,16 @@ export default function NotificationSettings() {
       ) : (
         <button
           onClick={enableNotifications}
-          disabled={loading || subscribed}
+          disabled={loading}
           className="w-full rounded bg-green-700 p-3 text-white disabled:opacity-50"
         >
-          {loading
-            ? "Enabling..."
-            : subscribed
-            ? "Notifications Subscribed ✓"
-            : "Enable Notifications"}
+          
+        {loading
+        ? "Enabling..."
+        : subscribed
+        ? "Verify Notification Subscription"
+        : "Enable Notifications"}
+        
         </button>
       )}
 
