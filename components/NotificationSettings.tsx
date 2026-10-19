@@ -2,11 +2,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  const rawData = window.atob(base64);
+
+  return Uint8Array.from(rawData, (char) =>
+    char.charCodeAt(0)
+  );
+}
 
 export default function NotificationSettings() {
   const [supported, setSupported] = useState(true);
   const [permission, setPermission] =
     useState<NotificationPermission>("default");
+  const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -24,37 +40,84 @@ export default function NotificationSettings() {
     if (available) {
       navigator.serviceWorker
         .register("/sw.js")
-        .catch((error) => {
-          console.error("Service worker error:", error);
-          setMessage("Could not register service worker.");
-        });
+        .then(async (registration) => {
+          const subscription =
+            await registration.pushManager.getSubscription();
+
+          setSubscribed(!!subscription);
+        })
+        .catch(console.error);
     }
   }, []);
 
   async function enableNotifications() {
+    if (!supported || loading) return;
+
+    setLoading(true);
     setMessage("");
 
-    if (!supported) {
-      setMessage("Push notifications aren't supported here.");
-      return;
-    }
-
     try {
-      const result = await Notification.requestPermission();
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
 
+      if (authError || !authData.user) {
+        throw new Error("Please sign in first.");
+      }
+
+      const registration =
+        await navigator.serviceWorker.ready;
+
+      const result = await Notification.requestPermission();
       setPermission(result);
 
-      if (result === "granted") {
-        setMessage("Notifications enabled on this device!");
-      } else if (result === "denied") {
-        setMessage(
-          "Notifications are blocked. Enable them in your device settings."
-        );
-      } else {
-        setMessage("Notification permission was not granted.");
+      if (result !== "granted") {
+        throw new Error("Notification permission was not granted.");
       }
-    } catch {
-      setMessage("Could not request notification permission.");
+
+      const publicKey =
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+      if (!publicKey) {
+        throw new Error("Missing VAPID public key.");
+      }
+
+      let subscription =
+        await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey:
+            urlBase64ToUint8Array(publicKey) as BufferSource,
+        });
+      }
+
+      const subscriptionData = subscription.toJSON();
+
+      const { error } = await supabase
+        .from("push_subscriptions")
+        .upsert(
+          {
+            user_id: authData.user.id,
+            endpoint: subscription.endpoint,
+            p256dh: subscriptionData.keys?.p256dh,
+            auth_key: subscriptionData.keys?.auth,
+          },
+          { onConflict: "endpoint" }
+        );
+
+      if (error) throw error;
+
+      setSubscribed(true);
+      setMessage("Your device is subscribed to FridgePal notifications!");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not enable notifications."
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -65,22 +128,24 @@ export default function NotificationSettings() {
       </h2>
 
       <p className="mb-4 text-sm text-gray-600">
-        Get alerts when groceries are about to expire.
+        Receive alerts when groceries are about to expire.
       </p>
 
       {!supported ? (
         <p className="text-sm text-red-600">
-          Push notifications are not supported in this browser.
+          Push notifications are not supported here.
           On iPhone, open FridgePal from your Home Screen.
         </p>
       ) : (
         <button
           onClick={enableNotifications}
-          disabled={permission === "granted"}
+          disabled={loading || subscribed}
           className="w-full rounded bg-green-700 p-3 text-white disabled:opacity-50"
         >
-          {permission === "granted"
-            ? "Notifications Allowed ✓"
+          {loading
+            ? "Enabling..."
+            : subscribed
+            ? "Notifications Subscribed ✓"
             : "Enable Notifications"}
         </button>
       )}
@@ -93,3 +158,4 @@ export default function NotificationSettings() {
     </div>
   );
 }
+
