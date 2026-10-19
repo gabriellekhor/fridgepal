@@ -3,6 +3,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { useRouter } from "next/navigation";
+
 
 
 type Food = {
@@ -21,6 +23,9 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("expiring");
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [databaseError, setDatabaseError] = useState("");
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     void findHousehold();
@@ -50,6 +55,31 @@ export default function Home() {
       JSON.stringify(foods)
     );
   }, [foods, loaded]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function checkAuth() {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (!active) return;
+
+      if (error || !data.user) {
+        setIsAuthenticated(false);
+        router.replace("/login");
+      } else {
+        setIsAuthenticated(true);
+      }
+
+      setCheckingAuth(false);
+    }
+
+    void checkAuth();
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   const [name, setName] = useState("");
   const [expiry, setExpiry] = useState("");
@@ -184,6 +214,14 @@ export default function Home() {
       ? expiringFoods
       : freshFoods;
 
+  if (checkingAuth || !isAuthenticated) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-green-50 text-gray-700">
+        <p>Checking your login...</p>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-green-50 p-8 text-gray-900">
       <div className="mx-auto mb-4 max-w-2xl">
@@ -201,7 +239,7 @@ export default function Home() {
           </p>
         )}
       </div>
-      
+
       <div className="mx-auto max-w-2xl">
         <h1 className="text-4xl font-bold text-green-800">
           🥬 FridgePal
