@@ -1,69 +1,391 @@
-import Image from "next/image";
+
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+
+
+type Food = {
+  id: number;
+  name: string;
+  expiry: string;
+  quantity?: number;
+  unit?: string;
+  category?: string;
+};
+
 
 export default function Home() {
+  const [foods, setFoods] = useState<Food[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [activeTab, setActiveTab] = useState("expiring");
+  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [databaseError, setDatabaseError] = useState("");
+
+  useEffect(() => {
+    void findHousehold();
+    // Initial household lookup after the page loads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    try {
+      const savedFoods = localStorage.getItem("fridgepal-foods");
+
+      if (savedFoods) {
+        setFoods(JSON.parse(savedFoods) as Food[]);
+      }
+    } catch (error) {
+      console.error("Could not load groceries:", error);
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
+  
+  useEffect(() => {
+    if (!loaded) return;
+
+    localStorage.setItem(
+      "fridgepal-foods",
+      JSON.stringify(foods)
+    );
+  }, [foods, loaded]);
+
+  const [name, setName] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [unit, setUnit] = useState("pieces");
+  const [category, setCategory] = useState("Other");
+
+  async function findHousehold() {
+    setDatabaseError("");
+
+    const { data: userData, error: userError } =
+      await supabase.auth.getUser();
+
+    if (userError || !userData.user) {
+      setDatabaseError("Please sign in to FridgePal first.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("household_members")
+      .select("household_id")
+      .eq("user_id", userData.user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      setDatabaseError(error.message);
+      return;
+    }
+
+    if (!data) {
+      setDatabaseError("No household is linked to your account.");
+      return;
+    }
+
+    setHouseholdId(data.household_id);
+  }
+
+  function addFood() {
+    const amount = Number(quantity);
+
+    if (
+      !name.trim() ||
+      !expiry ||
+      !quantity.trim() ||
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      return;
+    }
+
+    const newFood: Food = {
+      id: Date.now(),
+      name: name.trim(),
+      expiry: expiry,
+      quantity: amount,
+      unit: unit,
+      category: category,
+    };
+
+    setFoods([...foods, newFood]);
+
+    setName("");
+    setExpiry("");
+    setQuantity("1");
+    setUnit("pieces");
+    setCategory("Other");
+  }
+
+  function getStatus(date: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const expiryDate = new Date(date + "T00:00:00");
+    const days = Math.round(
+      (expiryDate.getTime() - today.getTime()) / 86400000
+    );
+
+    if (days < 0) return "Expired";
+    if (days === 0) return "Expires today";
+    if (days <= 3) return `Expiring in ${days} days`;
+    return `${days} days left`;
+  }
+
+  function getCategory(date: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const expiryDate = new Date(date + "T00:00:00");
+
+    const days = Math.round(
+      (expiryDate.getTime() - today.getTime()) / 86400000
+    );
+
+    if (days < 0) return "expired";
+    if (days <= 3) return "expiring";
+    return "fresh";
+  }
+
+  function getExpiryColor(date: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const expiryDate = new Date(date + "T00:00:00");
+
+    const days = Math.round(
+      (expiryDate.getTime() - today.getTime()) / 86400000
+    );
+
+    if (days < 0) return "text-red-600";
+    if (days <= 3) return "text-orange-600";
+    return "text-green-700";
+  }
+
+
+  const expiredFoods = foods.filter(
+    (food) => getCategory(food.expiry) === "expired"
+  );
+
+  const expiringFoods = foods.filter(
+    (food) => getCategory(food.expiry) === "expiring"
+  );
+
+  const freshFoods = foods.filter(
+    (food) => getCategory(food.expiry) === "fresh"
+  );
+
+  const displayedFoods =
+    activeTab === "expired"
+      ? expiredFoods
+      : activeTab === "expiring"
+      ? expiringFoods
+      : freshFoods;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen bg-green-50 p-8 text-gray-900">
+      <div className="mx-auto mb-4 max-w-2xl">
+        {householdId ? (
+          <p className="rounded-lg bg-green-100 p-3 text-sm text-green-800">
+            ✓ Connected to your household database!
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        ) : databaseError ? (
+          <p className="rounded-lg bg-red-100 p-3 text-sm text-red-700">
+            {databaseError}
+          </p>
+        ) : (
+          <p className="rounded-lg bg-yellow-100 p-3 text-sm text-yellow-800">
+            Connecting to Supabase...
+          </p>
+        )}
+      </div>
+      
+      <div className="mx-auto max-w-2xl">
+        <h1 className="text-4xl font-bold text-green-800">
+          🥬 FridgePal
+        </h1>
+
+        <p className="mt-2 text-gray-600">
+          Keep your groceries fresh and reduce food waste.
+        </p>
+
+        <div className="mt-8 rounded-xl bg-white p-6 shadow">
+          <h2 className="mb-4 text-xl font-semibold">
+            Add a grocery item
+          </h2>
+
+          <input
+            className="mb-3 w-full rounded border p-3"
+            placeholder="Food name (e.g. Milk)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+
+          <div className="mb-3 grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Quantity
+              </label>
+              <input
+                type="number"
+                min="0.01"
+                step="any"
+                className="w-full rounded border p-3"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Unit
+              </label>
+              <select
+                className="w-full rounded border p-3"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+              >
+                <option value="pieces">Pieces</option>
+                <option value="cartons">Cartons</option>
+                <option value="bottles">Bottles</option>
+                <option value="packs">Packs</option>
+                <option value="kg">Kilograms</option>
+                <option value="g">Grams</option>
+                <option value="L">Litres</option>
+                <option value="mL">Millilitres</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <label className="mb-1 block text-sm font-medium">
+              Food Category
+            </label>
+            <select
+              className="w-full rounded border p-3"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="Dairy">🥛 Dairy</option>
+              <option value="Vegetables">🥬 Vegetables</option>
+              <option value="Fruits">🍎 Fruits</option>
+              <option value="Meat & Seafood">🥩 Meat & Seafood</option>
+              <option value="Drinks">🥤 Drinks</option>
+              <option value="Other">🍱 Other</option>
+            </select>
+          </div>
+
+          <input
+            type="date"
+            className="mb-3 w-full rounded border p-3"
+            value={expiry}
+            onChange={(e) => setExpiry(e.target.value)}
+          />
+
+          <button
+            onClick={addFood}
+            className="w-full rounded bg-green-700 p-3 text-white hover:bg-green-800"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Add Food
+          </button>
         </div>
-      </main>
-    </div>
+
+        <h2 className="mb-4 mt-8 text-2xl font-semibold">
+          My Fridge ({foods.length} items)
+        </h2>
+
+        <div className="mb-6 mt-4 grid grid-cols-3 gap-3">
+          <button
+            onClick={() => setActiveTab("expired")}
+            className={`rounded-xl p-4 text-center ${
+              activeTab === "expired"
+                ? "border-2 border-red-500 bg-red-100"
+                : "bg-white"
+            }`}
+          >
+            <p className="text-2xl font-bold text-red-600">
+              {expiredFoods.length}
+            </p>
+            <p className="text-sm">Expired</p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("expiring")}
+            className={`rounded-xl p-4 text-center ${
+              activeTab === "expiring"
+                ? "border-2 border-orange-500 bg-orange-100"
+                : "bg-white"
+            }`}
+          >
+            <p className="text-2xl font-bold text-orange-600">
+              {expiringFoods.length}
+            </p>
+            <p className="text-sm">Expiring Soon</p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("fresh")}
+            className={`rounded-xl p-4 text-center ${
+              activeTab === "fresh"
+                ? "border-2 border-green-500 bg-green-100"
+                : "bg-white"
+            }`}
+          >
+            <p className="text-2xl font-bold text-green-700">
+              {freshFoods.length}
+            </p>
+            <p className="text-sm">Fresh</p>
+          </button>
+        </div>
+
+        {foods.length === 0 && (
+          <p className="text-gray-500">
+            Your fridge is empty. Add your first item!
+          </p>
+        )}
+
+      {displayedFoods.length === 0 && (
+        <p className="rounded-xl bg-white p-6 text-center text-gray-500">
+          No groceries in this category!
+        </p>
+      )}
+
+      {[...displayedFoods]
+        .sort((a, b) => a.expiry.localeCompare(b.expiry))
+        .map((food) => (
+          <div
+            key={food.id}
+            className="mb-3 flex items-center justify-between rounded-xl bg-white p-4 shadow"
+          >
+            <div>
+              <h3 className="font-semibold">{food.name}</h3>
+              <p className="text-sm text-gray-600">
+                {food.quantity ?? 1} {food.unit ?? "piece"}
+                {" · "}
+                {food.category ?? "Uncategorised"}
+              </p>
+              <p className="text-sm text-gray-500">
+                Expiry: {food.expiry}
+              </p>
+              <p className={`text-sm font-medium ${getExpiryColor(food.expiry)}`}>
+                {getStatus(food.expiry)}
+              </p>
+
+            </div>
+
+            <button
+              onClick={() =>
+                setFoods(foods.filter((item) => item.id !== food.id))
+              }
+              className="rounded bg-red-100 px-3 py-2 text-sm text-red-700"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+    </main>
   );
 }
