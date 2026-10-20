@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🥬 FridgePal
 
-## Getting Started
+**Track groceries. Reduce food waste.**
 
-First, run the development server:
+FridgePal is a personal project I started to explore the process of developing a digital product, from identifying a problem to designing and building a functional solution.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+The idea came from a recurring issue in my own household: with multiple family members sharing the same fridge, it was difficult to keep track of what groceries we had and when they would expire. This often meant that food was forgotten and eventually thrown away.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+I saw this as an opportunity to develop a practical solution while gaining hands-on experience in product development. I designed and built FridgePal, a mobile-friendly household inventory management application that allows users to track groceries, share inventories with household members, and receive automated expiry reminders.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Through this project, I wanted to better understand how product decisions, user experience design, and technical implementation come together to solve real-world problems.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**[Try FridgePal](https://fridgepal-eight.vercel.app)**
 
-## Learn More
+## Key Features
 
-To learn more about Next.js, take a look at the following resources:
+- **Grocery Inventory Management:** Add and remove groceries with quantities, categories, and expiry dates.
+- **Expiry Tracking:** Automatically categorise groceries into Expired, Expiring Soon, and Fresh.
+- **Shared Household Inventory:** Allow household members to access and update the same grocery inventory across devices.
+- **Household Management:** Create households and invite members using invitation codes.
+- **Automated Push Notifications:** Receive reminders when groceries are approaching their expiry dates.
+- **Progressive Web App (PWA):** Install FridgePal directly onto a phone's Home Screen.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Technology | Purpose |
+|---|---|
+| **Next.js (TypeScript)** | Built the web application and user interface |
+| **Supabase** | Managed user authentication and stored shared household inventory data |
+| **Vercel** | Hosted the application and automated daily expiry reminders |
 
-## Deploy on Vercel
+FridgePal was also developed as a Progressive Web App (PWA), allowing users to install it on their phones and receive push notifications.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Future Improvements
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Simplify grocery entry through barcode or receipt scanning.
+- Introduce customisable expiry notification preferences.
+- Develop food waste analytics to identify household consumption patterns.
+- Improve the user experience based on household feedback.
+
+## Project Status
+
+FridgePal is an ongoing personal project developed to address a practical challenge in my own household. Its core inventory management, household sharing, and push notification features have been implemented, with further improvements planned as the application is tested and used.
