@@ -95,6 +95,33 @@ export default function Home() {
     return () => { active = false; };
   }, [router]);
 
+  function calculateExpiry(startDate: string, days: number) {
+    const date = new Date(startDate + "T12:00:00Z");
+
+    date.setUTCDate(date.getUTCDate() + days);
+
+    return date.toISOString().slice(0, 10);
+  }
+
+  function quickAddOatMilk() {
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Singapore",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+    setName("OATSIDE Oat Milk");
+    setQuantity("1");
+    setUnit("cartons");
+    setCategory("Drinks");
+    setExpiry(calculateExpiry(today, 5));
+    document.getElementById("manual-add")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
   async function addFood() {
     const amount = Number(quantity);
     if (!householdId || saving || !name.trim() || !expiry || !quantity.trim() ||
@@ -330,10 +357,60 @@ export default function Home() {
           </div>
         )}
 
+        {/* QUICK ADD SECTION */}
         <div className="mt-8 rounded-xl bg-white p-6 shadow">
-          <h2 className="mb-4 text-xl font-semibold">
-            Add a grocery item
+          <h2 className="mb-2 text-2xl font-semibold text-gray-900">
+            🌱 Quick Add
           </h2>
+
+          <p className="mb-5 text-sm text-gray-500">
+            Quickly add products with special storage rules after opening.
+            We'll automatically calculate the expiry date for you.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {/* OATSIDE PRESET */}
+            <button
+              type="button"
+              onClick={quickAddOatMilk}
+              className="flex flex-col items-center rounded-xl border border-green-200 bg-green-50 p-4 text-center transition hover:border-green-500 hover:bg-green-100"
+            >
+              <img
+                src="/oatside.png"
+                alt="OATSIDE Oat Milk"
+                className="mb-3 h-24 w-24 object-contain"
+              />
+
+              <p className="text-sm font-semibold text-gray-900">
+                OATSIDE Oat Milk
+              </p>
+
+              <p className="mt-1 text-xs text-gray-500">
+                5 days after opening
+              </p>
+            </button>
+
+            {/* SPACE FOR FUTURE PRESETS */}
+            <div className="flex min-h-44 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 p-4 text-center">
+              <span className="mb-2 text-2xl text-gray-400">＋</span>
+              <p className="text-xs text-gray-400">
+                More products coming soon
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+            id="manual-add"
+            className="mt-8 rounded-xl bg-white p-6 shadow"
+          >
+          <h2 className="mb-2 text-2xl font-semibold text-gray-900">
+            ➕ Manually Add Grocery Item
+          </h2>
+
+          <p className="mb-5 text-sm text-gray-500">
+            Fill in the details to add a new item to your fridge.
+          </p>
 
           <input
             className="mb-3 w-full rounded border p-3"
@@ -635,5 +712,4 @@ export default function Home() {
     </main>
   );
 }
-
              
