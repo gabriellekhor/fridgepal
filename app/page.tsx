@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 import NotificationSettings from "../components/NotificationSettings";
+import PresetImage from "../components/PresetImage";
+
 
 
 type Food = {
@@ -15,10 +17,23 @@ type Food = {
   category?: string;
 };
 
+type QuickAddPreset = {
+  id: string;
+  household_id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  category: string;
+  days_after_opening: number;
+  image_path: string | null;
+};
+
 
 export default function Home() {
   const router = useRouter();
   const [foods, setFoods] = useState<Food[]>([]);
+  const [quickAddPresets, setQuickAddPresets] =
+    useState<QuickAddPreset[]>([]);
   const [activeTab, setActiveTab] = useState("expiring");
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [householdName, setHouseholdName] = useState("");
@@ -64,6 +79,22 @@ export default function Home() {
         }
         setHouseholdId(membership.household_id);
 
+        const { data: presets, error: presetsError } =
+          await supabase
+            .from("quick_add_presets")
+            .select(
+              "id, household_id, name, quantity, unit, category, days_after_opening,image_path"
+            )
+            .eq("household_id", membership.household_id)
+            .order("created_at", { ascending: true });
+
+        if (presetsError) throw presetsError;
+
+        if (active) {
+          setQuickAddPresets(presets ?? []);
+        }
+
+
         const { data: household, error: householdError } =
           await supabase
             .from("households")
@@ -103,7 +134,7 @@ export default function Home() {
     return date.toISOString().slice(0, 10);
   }
 
-  function quickAddOatMilk() {
+  function quickAddPreset(preset: QuickAddPreset) {
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Singapore",
       year: "numeric",
@@ -111,11 +142,14 @@ export default function Home() {
       day: "2-digit",
     }).format(new Date());
 
-    setName("OATSIDE Oat Milk");
-    setQuantity("1");
-    setUnit("cartons");
-    setCategory("Drinks");
-    setExpiry(calculateExpiry(today, 5));
+    setName(preset.name);
+    setQuantity(String(preset.quantity));
+    setUnit(preset.unit);
+    setCategory(preset.category);
+    setExpiry(
+      calculateExpiry(today, preset.days_after_opening)
+    );
+
     document.getElementById("manual-add")?.scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -364,39 +398,46 @@ export default function Home() {
           </h2>
 
           <p className="mb-5 text-sm text-gray-500">
-            Quickly add products with special storage rules after opening.
-            We'll automatically calculate the expiry date for you.
+            Quickly add your household's saved products.
+            Expiry dates are calculated automatically.
           </p>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {/* OATSIDE PRESET */}
+            {quickAddPresets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => quickAddPreset(preset)}
+                className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-green-200 bg-green-50 p-4 text-center transition hover:border-green-500 hover:bg-green-100"
+              >
+                <PresetImage
+                  imagePath={preset.image_path}
+                  name={preset.name}
+                />
+
+                <p className="text-sm font-semibold text-gray-900">
+                  {preset.name}
+                </p>
+
+                <p className="mt-1 text-xs text-gray-500">
+                  {preset.days_after_opening} days after opening
+                </p>
+              </button>
+            ))}
+
             <button
               type="button"
-              onClick={quickAddOatMilk}
-              className="flex flex-col items-center rounded-xl border border-green-200 bg-green-50 p-4 text-center transition hover:border-green-500 hover:bg-green-100"
+              onClick={() => router.push("/quick-add")}
+              className="flex min-h-40 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-4 text-center hover:bg-gray-50"
             >
-              <img
-                src="/oatside.png"
-                alt="OATSIDE Oat Milk"
-                className="mb-3 h-24 w-24 object-contain"
-              />
+              <span className="mb-2 text-3xl text-gray-400">
+                +
+              </span>
 
-              <p className="text-sm font-semibold text-gray-900">
-                OATSIDE Oat Milk
-              </p>
-
-              <p className="mt-1 text-xs text-gray-500">
-                5 days after opening
+              <p className="text-sm font-medium text-gray-600">
+                Create Preset
               </p>
             </button>
-
-            {/* SPACE FOR FUTURE PRESETS */}
-            <div className="flex min-h-44 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 p-4 text-center">
-              <span className="mb-2 text-2xl text-gray-400">＋</span>
-              <p className="text-xs text-gray-400">
-                More products coming soon
-              </p>
-            </div>
           </div>
         </div>
 
