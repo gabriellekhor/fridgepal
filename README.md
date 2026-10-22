@@ -21,6 +21,30 @@ Through this project, I wanted to better understand how product decisions, user 
 - **Automated Push Notifications:** Receive reminders when groceries are approaching their expiry dates.
 - **Progressive Web App (PWA):** Install FridgePal directly onto a phone's Home Screen.
 
+## 🚀 Latest Updates — October 2026
+
+I've continued developing FridgePal with a focus on improving usability, reducing manual data entry, and making the application more adaptable to different households.
+
+### 1. Customisable Quick Add Presets
+- Introduced a Quick Add feature that allows households to save frequently used products with their own storage rules.
+- Users can customise product names, quantities, categories, and recommended storage periods after opening.
+- Added support for uploading product images to make groceries easier to identify.
+- Users can create, edit, and delete their own presets.
+- Selecting a preset automatically fills in the grocery details and calculates an expiry date.
+
+### 2. Improved Grocery Management
+- Added an Edit Grocery function so users can correct product details without deleting and re-adding items.
+- Redesigned the grocery entry interface with separate Quick Add and Manual Add sections for easier navigation.
+
+### 3. Improved Household Customisation
+- Quick Add presets are shared among members of the same household.
+- Different households can maintain their own product shortcuts and storage preferences.
+
+### What's Next?
+- Introduce an opening-date selector for more accurate expiry calculations.
+- Explore barcode or receipt scanning to further reduce manual entry.
+- Continue improving the user experience based on household feedback.
+
 ## Tech Stack
 
 | Technology | Purpose |
