@@ -183,7 +183,7 @@ return (
         <button
           onClick={enableNotifications}
           disabled={loading}
-          className="w-full rounded bg-green-700 p-3 text-white disabled:opacity-50"
+          className="w-full rounded-xl bg-[#665548] p-3 font-medium text-white transition hover:bg-[#514237] disabled:opacity-50"
         >
           {loading
             ? "Enabling..."
@@ -196,7 +196,7 @@ return (
           <button
             onClick={sendTestNotification}
             disabled={loading}
-            className="mt-3 w-full rounded border border-green-700 p-3 text-green-700 disabled:opacity-50"
+            className="mt-3 w-full rounded-xl border border-[#B5A58F] bg-white p-3 font-medium text-[#665548] transition hover:bg-[#F7F3ED] disabled:opacity-50"
           >
             🔔 Send Test Notification
           </button>

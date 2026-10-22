@@ -334,26 +334,70 @@ export default function Home() {
     return <main className="min-h-screen bg-green-50 p-8 text-gray-900">Loading your fridge...</main>;
   }
 
+  async function handleLogout() {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      setDatabaseError("Could not log out. Please try again.");
+      return;
+    }
+
+    router.replace("/login");
+    router.refresh();
+  }
+
   return (
-    <main className="min-h-screen bg-green-50 p-8 text-gray-900">
+    <main className="min-h-screen bg-[#F6F2E9] p-4 text-gray-900 sm:p-8">
       <div className="mx-auto mb-4 max-w-2xl">
         {databaseError ? (
-          <p className="rounded-lg bg-red-100 p-3 text-sm text-red-700">{databaseError}</p>
+          <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {databaseError}
+          </p>
         ) : householdId ? (
-          <p className="rounded-lg bg-green-100 p-3 text-sm text-green-800">
-            ✓ Connected to your household database!
-          </p>
+          <div className="flex items-center gap-3 rounded-xl border border-[#DED5C8] bg-[#F1EBE2] p-4">
+            <span className="text-lg text-[#665548]">✓</span>
+            <div>
+              <p className="text-sm font-medium text-[#665548]">
+                Connected to your household database!
+              </p>
+              <p className="text-xs text-[#897968]">
+                Your groceries are synced and ready.
+              </p>
+            </div>
+          </div>
         ) : (
-          <p className="rounded-lg bg-yellow-100 p-3 text-sm text-yellow-800">
-            Connecting to Supabase...
-          </p>
+          <div className="flex items-center gap-3 rounded-xl border border-[#DED5C8] bg-[#F1EBE2] p-4">
+            <span className="text-lg text-[#665548]">◌</span>
+            <div>
+              <p className="text-sm font-medium text-[#665548]">
+                Connecting to Supabase...
+              </p>
+              <p className="text-xs text-[#897968]">
+                Getting your household ready.
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
       <div className="mx-auto max-w-2xl">
-        <h1 className="text-4xl font-bold text-green-800">
-          🥬 FridgePal
-        </h1>
+        
+    <div className="flex items-center justify-between gap-4">
+      <h1 className="text-4xl font-bold tracking-tight text-green-900">
+        fridge<span className="text-green-700">PAL</span> 🥬
+      </h1>
+
+
+      <button
+        type="button"
+        onClick={() => void handleLogout()}
+        className="flex shrink-0 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 hover:shadow-md"
+      >
+        <span>↪</span>
+        <span>Log Out</span>
+      </button>
+    </div>
+
 
         <p className="mt-2 text-gray-600">
           Keep your groceries fresh and reduce food waste.
@@ -362,21 +406,21 @@ export default function Home() {
         <nav className="mt-6 flex gap-6 border-b border-gray-200 pb-3">
           <a
             href="/"
-            className="border-b-2 border-green-700 pb-2 font-semibold text-green-700"
+            className="border-b-2 border-[#665548] pb-2 font-semibold text-[#665548]"
           >
             🥬 My Fridge
           </a>
 
           <a
             href="/household"
-            className="pb-2 text-gray-600 hover:text-green-700"
+            className="pb-2 text-[#898078] hover:text-[#665548]"
           >
             👨‍👩‍👧‍👦 Household
           </a>
         </nav>
 
         {householdId && (
-          <div className="mt-6 flex items-center gap-3 rounded-xl border border-green-200 bg-green-100 p-4">
+          <div className="mt-6 flex items-center gap-3 rounded-xl border border-[#DED5C8] bg-[#F1EBE2] p-4">
             <span className="text-2xl">🏠</span>
 
             <div>
@@ -408,7 +452,7 @@ export default function Home() {
                 key={preset.id}
                 type="button"
                 onClick={() => quickAddPreset(preset)}
-                className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-green-200 bg-green-50 p-4 text-center transition hover:border-green-500 hover:bg-green-100"
+                className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-[#D8CFC3] bg-[#F7F3ED] p-4 text-center transition hover:border-[#B5A58F] hover:bg-[#EFE7DC]"
               >
                 <PresetImage
                   imagePath={preset.image_path}
@@ -434,7 +478,7 @@ export default function Home() {
                 +
               </span>
 
-              <p className="text-sm font-medium text-gray-600">
+              <p className="flex min-h-40 flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#C9BDAF] bg-white p-4 text-center transition hover:bg-[#F7F3ED]">
                 Create Preset
               </p>
             </button>
@@ -534,7 +578,7 @@ export default function Home() {
           <button
             onClick={addFood}
             disabled={!householdId || saving}
-            className="w-full rounded bg-green-700 p-3 text-white hover:bg-green-800 disabled:opacity-50"
+            className="w-full rounded-xl bg-[#665548] p-3 font-medium text-white transition hover:bg-[#514237] disabled:opacity-50"
           >
             Add Food
           </button>

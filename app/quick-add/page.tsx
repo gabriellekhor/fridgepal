@@ -205,7 +205,7 @@ async function savePreset() {
 }
 
   return (
-    <main className="min-h-screen bg-green-50 p-6 text-gray-900">
+    <main className="min-h-screen bg-[#F6F2E9] p-4 text-gray-900 sm:p-8">
       <div className="mx-auto max-w-lg">
         <h1 className="mb-2 text-3xl font-bold text-green-800">
           🌱 Create Quick Add Preset
@@ -348,7 +348,7 @@ async function savePreset() {
             <button
               onClick={savePreset}
               disabled={saving || !householdId}
-              className="w-full rounded bg-green-700 p-3 text-white disabled:opacity-50"
+              className="w-full rounded-xl bg-[#665548] p-3 font-medium text-white transition hover:bg-[#514237] disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Preset"}
             </button>
@@ -360,11 +360,11 @@ async function savePreset() {
         )}
 
         <button
-        onClick={() => router.push("/")}
-        className="mt-6 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 font-medium text-green-800 shadow-sm transition hover:bg-green-50 hover:shadow-md"
+          onClick={() => router.push("/")}
+          className="mt-6 flex items-center gap-2 rounded-xl border border-[#DED5C8] bg-white px-5 py-3 font-medium text-[#665548] shadow-sm transition hover:bg-[#F1EBE2] hover:shadow-md"
         >
-        <span className="text-lg">←</span>
-        <span>Back to FridgePal</span>
+          <span className="text-lg">←</span>
+          <span>Back to FridgePal</span>
         </button>
 
       </div>

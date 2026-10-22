@@ -1,4 +1,4 @@
-# 🥬 FridgePal
+# 🥬 fridgePAL
 
 **Track groceries. Reduce food waste.**
 
@@ -10,7 +10,7 @@ I saw this as an opportunity to develop a practical solution while gaining hands
 
 Through this project, I wanted to better understand how product decisions, user experience design, and technical implementation come together to solve real-world problems.
 
-**[Try FridgePal](https://fridgepal-eight.vercel.app)**
+**[Try fridgePAL](https://fridgepal-eight.vercel.app)**
 
 ## Key Features
 

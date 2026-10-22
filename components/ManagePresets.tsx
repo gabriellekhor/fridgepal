@@ -350,7 +350,7 @@ export default function ManagePresets({
                   <button
                     onClick={saveChanges}
                     disabled={working}
-                    className="flex-1 rounded bg-green-700 p-3 text-white disabled:opacity-50"
+                    className="flex-1 rounded-xl bg-[#665548] p-3 font-medium text-white transition hover:bg-[#514237] disabled:opacity-50"
                   >
                     {working ? "Saving..." : "Save Changes"}
                   </button>
@@ -384,14 +384,14 @@ export default function ManagePresets({
               <div className="flex gap-3">
                 <button
                   onClick={() => startEditing(preset)}
-                  className="flex-1 rounded bg-blue-100 p-2 text-blue-700"
+                  className="flex-1 rounded-lg bg-[#F1EBE2] p-3 font-medium text-[#665548] transition hover:bg-[#E5D9CA]"
                 >
                   ✏️ Edit
                 </button>
 
                 <button
                   onClick={() => setDeletingId(preset.id)}
-                  className="flex-1 rounded bg-red-100 p-2 text-red-700"
+                  className="flex-1 rounded-lg bg-red-50 p-3 font-medium text-red-700 transition hover:bg-red-100"
                 >
                   Delete
                 </button>

@@ -2,135 +2,353 @@
 "use client";
 
 import { useState } from "react";
-
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
-import { useRouter } from "next/navigation";
-
 export default function LoginPage() {
-    const router = useRouter();
+  const router = useRouter();
+
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function signUp() {
+    if (password.length < 8) {
+      setMessage("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage("Passwords do not match.");
+      return;
+    }
+
     setLoading(true);
     setMessage("");
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (error) {
-      setMessage(error.message);
-    } else {
-      setMessage(
-        "Sign-up submitted! Check your email for a confirmation link if required."
-      );
-    }
-
-    setLoading(false);
-  }
-
-async function signIn() {
-  setLoading(true);
-  setMessage("");
-
-  try {
-    const { data: authData, error: signInError } =
-      await supabase.auth.signInWithPassword({
-        email,
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
         password,
       });
 
-    if (signInError) {
-      setMessage(signInError.message);
-      return;
-    }
+      if (error) throw error;
 
-    if (!authData.user) {
-      setMessage("Could not verify your account.");
-      return;
+      if (data.session && data.user) {
+        router.replace("/household");
+      } else {
+        setMessage(
+          "Account created! Please check your email to confirm your account, then sign in."
+        );
+      }
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not create account."
+      );
+    } finally {
+      setLoading(false);
     }
-
-    // Check whether the user belongs to a household
-    const { data: membership, error: memberError } =
-      await supabase
-        .from("household_members")
-        .select("household_id")
-        .eq("user_id", authData.user.id)
-        .maybeSingle();
-
-    if (memberError) {
-      setMessage(memberError.message);
-      return;
-    }
-
-    if (membership) {
-      // Existing member: open fridge dashboard
-      router.replace("/");
-    } else {
-      // New user: create or join a household
-      router.replace("/household");
-    }
-  } catch {
-    setMessage("Something went wrong. Please try again.");
-  } finally {
-    setLoading(false);
   }
-}
+
+  async function signIn() {
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const { data: authData, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+      if (signInError) throw signInError;
+
+      if (!authData.user) {
+        throw new Error("Could not verify your account.");
+      }
+
+      const { data: membership, error: memberError } =
+        await supabase
+          .from("household_members")
+          .select("household_id")
+          .eq("user_id", authData.user.id)
+          .limit(1)
+          .maybeSingle();
+
+      if (memberError) throw memberError;
+
+      if (membership) {
+        router.replace("/");
+      } else {
+        router.replace("/household");
+      }
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function switchMode() {
+    setMode((current) =>
+      current === "signin" ? "signup" : "signin"
+    );
+    setMessage("");
+    setPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
+  }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-green-50 p-6 text-gray-900">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow">
-        <h1 className="mb-2 text-center text-3xl font-bold text-green-800">
-          🥬 FridgePal
-        </h1>
+    <main
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gray-400 px-4 py-12 text-gray-900"
+      style={{
+        backgroundImage: "url('/fridge-background.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      
+<div className="absolute inset-0 bg-black/15" />
 
-        <p className="mb-6 text-center text-gray-600">
-          Sign in to manage your household fridge.
-        </p>
+      {/* Wrapper for paper and magnet */}
+      <div className="relative z-10 w-full max-w-md">
 
-        <input
-          type="email"
-          placeholder="Email address"
-          className="mb-3 w-full rounded border p-3"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <input
-          type="password"
-          placeholder="Password"
-          className="mb-4 w-full rounded border p-3"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <button
-          onClick={signIn}
-          disabled={loading}
-          className="mb-3 w-full rounded bg-green-700 p-3 text-white disabled:opacity-50"
+        {/* Realistic silver magnet */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2"
         >
-          Sign In
-        </button>
+          <div
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-500"
+            style={{
+              background:
+                "radial-gradient(circle at 30% 25%, #FFFFFF 0%, #DDE1E2 18%, #9CA3A6 48%, #5E6669 76%, #C7CCCE 100%)",
+              boxShadow:
+                "2px 5px 7px rgba(0,0,0,0.4), inset 1px 2px 3px rgba(255,255,255,0.8)",
+            }}
+          >
+            <div
+              className="h-4 w-4 rounded-full border border-gray-500"
+              style={{
+                background:
+                  "radial-gradient(circle at 35% 30%, #C8CCCD, #525A5D)",
+                boxShadow: "inset 1px 2px 3px rgba(0,0,0,0.35)",
+              }}
+            />
+          </div>
+        </div>
 
-        <button
-          onClick={signUp}
-          disabled={loading}
-          className="w-full rounded border border-green-700 p-3 text-green-700 disabled:opacity-50"
+        {/* Cream paper — keep your existing styles */}
+        
+        {/* Textured cream paper */}
+        <div
+          className="relative w-full border border-[#E8DCC4] px-7 pb-10 pt-14 sm:px-10"
+          style={{
+            backgroundColor: "#FFF9E9",
+
+            // Subtle paper grain
+            backgroundImage: `
+              repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                rgba(130, 105, 65, 0.045) 1px,
+                transparent 2px,
+                transparent 5px
+              ),
+              repeating-linear-gradient(
+                90deg,
+                transparent 0px,
+                rgba(130, 105, 65, 0.035) 1px,
+                transparent 2px,
+                transparent 7px
+              )
+            `,
+
+            // Slightly irregular paper edges
+            clipPath:
+              "polygon(0.4% 0%, 99.5% 0.3%, 100% 98.8%, 98.5% 99.5%, 70% 99.8%, 45% 99.3%, 20% 100%, 0% 99.2%)",
+
+            // Shadow against metallic fridge
+            boxShadow:
+              "3px 5px 10px rgba(0,0,0,0.18), 0 18px 45px rgba(0,0,0,0.16)",
+          }}
         >
-          Create Account
-        </button>
 
-        {message && (
-          <p className="mt-4 text-center text-sm">
-            {message}
+          <h1 className="mb-2 text-4xl font-bold tracking-tight text-green-900">
+            fridge<span className="text-green-700">PAL</span> 🥬
+          </h1>
+
+          <p className="-mt-1 text-sm text-gray-600">
+            your groceries, all in one place.
           </p>
-        )}
+
+        <h2 className="mb-6 mt-6 text-center text-xl font-semibold text-green-900">
+          {mode === "signin"
+            ? "Welcome back!"
+            : "Let's fill your fridge!"}
+        </h2>
+
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (mode === "signin") {
+              void signIn();
+            } else {
+              void signUp();
+            }
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm font-medium"
+            >
+              Email address
+            </label>
+
+            <input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="w-full rounded-xl border border-gray-300 bg-white/70 p-3 outline-none focus:border-green-700"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-2 block text-sm font-medium"
+            >
+              Password
+            </label>
+
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={mode === "signup" ? 8 : undefined}
+                autoComplete={
+                  mode === "signin"
+                    ? "current-password"
+                    : "new-password"
+                }
+                placeholder="Enter your password"
+                value={password}
+                onChange={(event) =>
+                  setPassword(event.target.value)
+                }
+                className="w-full rounded-xl border border-gray-300 bg-white/70 p-3 pr-14 outline-none focus:border-green-700"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500"
+                aria-label={
+                  showPassword ? "Hide password" : "Show password"
+                }
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
+
+          {mode === "signup" && (
+            <div>
+              <label
+                htmlFor="confirm-password"
+                className="mb-2 block text-sm font-medium"
+              >
+                Confirm password
+              </label>
+
+              <input
+                id="confirm-password"
+                type="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={(event) =>
+                  setConfirmPassword(event.target.value)
+                }
+                className="w-full rounded-xl border border-gray-300 bg-white/70 p-3 outline-none focus:border-green-700"
+              />
+
+              {confirmPassword &&
+                password !== confirmPassword && (
+                  <p className="mt-1 text-xs text-red-600">
+                    Passwords do not match.
+                  </p>
+                )}
+            </div>
+          )}
+
+          {message && (
+            <p
+              role="status"
+              className="rounded-lg bg-white/70 p-3 text-center text-sm text-green-900"
+            >
+              {message}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={
+              loading ||
+              (mode === "signup" &&
+                (password.length < 8 ||
+                  password !== confirmPassword))
+            }
+            className="w-full rounded-xl bg-green-900 p-4 font-medium text-white shadow-md transition hover:bg-green-800 disabled:opacity-50"
+          >
+            {loading
+              ? "Please wait..."
+              : mode === "signin"
+              ? "Open My Fridge →"
+              : "Create My Account →"}
+          </button>
+        </form>
+
+        <div className="mt-7 border-t border-gray-300 pt-5 text-center">
+          <p className="mb-2 text-sm text-gray-600">
+            {mode === "signin"
+              ? "New to FridgePal?"
+              : "Already have an account?"}
+          </p>
+
+          <button
+            type="button"
+            onClick={switchMode}
+            className="font-medium text-green-900 underline underline-offset-4"
+          >
+            {mode === "signin"
+              ? "Create an account"
+              : "Sign in instead"}
+          </button>
+        </div>
+      </div>
       </div>
     </main>
   );
 }
+

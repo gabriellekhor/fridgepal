@@ -141,14 +141,14 @@ export default function HouseholdPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-green-50 p-8 text-center text-gray-900">
+      <main className="min-h-screen bg-[#F6F2E9] p-8 text-center text-gray-900">
         Loading household...
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-green-50 p-6 text-gray-900">
+    <main className="min-h-screen bg-[#F6F2E9] p-6 text-gray-900">
       <div className="mx-auto max-w-lg">
         <h1 className="mb-2 text-3xl font-bold text-green-800">
           🥬 Household
@@ -231,7 +231,7 @@ export default function HouseholdPage() {
           </div>
         ) : !error ? (
           <div className="space-y-6">
-            <div className="rounded-xl bg-white p-6 shadow">
+            <div className="rounded-xl border border-[#E8E0D6] bg-white p-6 shadow-sm">
               <h2 className="mb-2 text-xl font-semibold">
                 Create a Household
               </h2>
@@ -251,13 +251,13 @@ export default function HouseholdPage() {
               <button
                 onClick={createHousehold}
                 disabled={working || newName.trim().length < 2}
-                className="w-full rounded bg-green-700 p-3 text-white disabled:opacity-50"
+                className="w-full rounded-xl bg-[#665548] p-3 font-medium text-white transition hover:bg-[#514237] disabled:opacity-50"
               >
                 {working ? "Creating..." : "Create Household"}
               </button>
             </div>
 
-            <div className="rounded-xl bg-white p-6 shadow">
+            <div className="rounded-xl border border-[#E8E0D6] bg-white p-6 shadow-sm">
               <h2 className="mb-2 text-xl font-semibold">
                 Join a Household
               </h2>
@@ -268,7 +268,7 @@ export default function HouseholdPage() {
 
               <button
                 onClick={() => router.push("/join")}
-                className="w-full rounded border border-green-700 p-3 text-green-700"
+                className="w-full rounded-xl bg-[#665548] p-3 font-medium text-white transition hover:bg-[#514237] disabled:opacity-50"
               >
                 Enter Invitation Code
               </button>
