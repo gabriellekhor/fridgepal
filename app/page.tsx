@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 import NotificationSettings from "../components/NotificationSettings";
 import PresetImage from "../components/PresetImage";
-
+import FridgePalTutorial from "../components/FridgePalTutorial";
 
 
 type Food = {
@@ -150,7 +150,7 @@ export default function Home() {
       calculateExpiry(today, preset.days_after_opening)
     );
 
-    document.getElementById("manual-add")?.scrollIntoView({
+    document.getElementById("tutorial-manual-add")?.scrollIntoView({
       behavior: "smooth",
       block: "start",
     });
@@ -386,18 +386,18 @@ export default function Home() {
       <h1 className="text-4xl font-bold tracking-tight text-green-900">
         fridge<span className="text-green-700">PAL</span> 🥬
       </h1>
-
-
-      <button
-        type="button"
-        onClick={() => void handleLogout()}
-        className="flex shrink-0 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 hover:shadow-md"
-      >
-        <span>↪</span>
-        <span>Log Out</span>
-      </button>
-    </div>
-
+      <div className="flex items-center gap-2">
+        <FridgePalTutorial />
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            className="flex shrink-0 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 hover:shadow-md"
+          >
+            <span>↪</span>
+            <span>Log Out</span>
+          </button>
+        </div>
+      </div>
 
         <p className="mt-2 text-gray-600">
           Keep your groceries fresh and reduce food waste.
@@ -420,7 +420,9 @@ export default function Home() {
         </nav>
 
         {householdId && (
-          <div className="mt-6 flex items-center gap-3 rounded-xl border border-[#DED5C8] bg-[#F1EBE2] p-4">
+          <div 
+            id="tutorial-household"
+            className="mt-6 flex items-center gap-3 rounded-xl border border-[#DED5C8] bg-[#F1EBE2] p-4">
             <span className="text-2xl">🏠</span>
 
             <div>
@@ -436,7 +438,9 @@ export default function Home() {
         )}
 
         {/* QUICK ADD SECTION */}
-        <div className="mt-8 rounded-xl bg-white p-6 shadow">
+        <div 
+        id="tutorial-quick-add"
+        className="mt-8 rounded-xl bg-white p-6 shadow">
           <h2 className="mb-2 text-2xl font-semibold text-gray-900">
             🌱 Quick Add
           </h2>
@@ -486,7 +490,7 @@ export default function Home() {
         </div>
 
         <div
-            id="manual-add"
+            id="tutorial-manual-add"
             className="mt-8 rounded-xl bg-white p-6 shadow"
           >
           <h2 className="mb-2 text-2xl font-semibold text-gray-900">
@@ -588,7 +592,9 @@ export default function Home() {
           My Fridge ({foods.length} items)
         </h2>
 
-        <div className="mb-6 mt-4 grid grid-cols-3 gap-3">
+        <div 
+        id="tutorial-expiry"
+        className="mb-6 mt-4 grid grid-cols-3 gap-3">
           <button
             onClick={() => setActiveTab("expired")}
             className={`rounded-xl p-4 text-center ${
@@ -644,6 +650,10 @@ export default function Home() {
         </p>
       )}
 
+    <div
+      id="tutorial-grocery-list"
+      className="min-h-16 rounded-xl"
+    >
       {[...displayedFoods]
         .sort((a, b) => a.expiry.localeCompare(b.expiry))
         .map((food) => (
@@ -686,6 +696,7 @@ export default function Home() {
           </div>
           </div>
         ))}
+        </div>
 
         {editingFood && (
           <div className="mt-6 rounded-xl border-2 border-green-300 bg-white p-6 shadow">
@@ -792,7 +803,10 @@ export default function Home() {
             </div>
           </div>
         )}
+      <div id="tutorial-notifications">
         <NotificationSettings />
+        </div>
+
       </div>
     </main>
   );
