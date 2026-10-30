@@ -84,7 +84,7 @@ export default function LoginPage() {
       if (memberError) throw memberError;
 
       if (membership) {
-        router.replace("/");
+        router.replace("/kitchen");
       } else {
         router.replace("/household");
       }

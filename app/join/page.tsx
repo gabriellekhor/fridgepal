@@ -55,7 +55,7 @@ export default function JoinHouseholdPage() {
       }
 
       setMessage("Successfully joined your household!");
-      router.replace("/");
+      router.replace("/kitchen");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

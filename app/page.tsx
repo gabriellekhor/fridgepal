@@ -6,15 +6,18 @@ import { useRouter } from "next/navigation";
 import NotificationSettings from "../components/NotificationSettings";
 import PresetImage from "../components/PresetImage";
 import FridgePalTutorial from "../components/FridgePalTutorial";
-
+import GroceryInventory from "../components/GroceryInventory";
+import KitchenNavigation from "../components/KitchenNavigation";
+import InventoryHeaderButtons from "../components/InventoryHeaderButtons";
 
 type Food = {
   id: number;
   name: string;
   expiry: string;
-  quantity?: number;
-  unit?: string;
-  category?: string;
+  quantity?: number | null;
+  unit?: string | null;
+  category?: string | null;
+  storage_location?: "fridge" | "cupboards";
 };
 
 type QuickAddPreset = {
@@ -34,7 +37,6 @@ export default function Home() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [quickAddPresets, setQuickAddPresets] =
     useState<QuickAddPreset[]>([]);
-  const [activeTab, setActiveTab] = useState("expiring");
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [householdName, setHouseholdName] = useState("");
   const [databaseError, setDatabaseError] = useState("");
@@ -49,6 +51,8 @@ export default function Home() {
   const [editingFood, setEditingFood] = useState<Food | null>(null);
   const [editName, setEditName] = useState("");
   const [editExpiry, setEditExpiry] = useState("");
+  const [editStorageLocation, setEditStorageLocation] =
+    useState<"fridge" | "cupboards">("fridge");
   const [editQuantity, setEditQuantity] = useState("1");
   const [editUnit, setEditUnit] = useState("pieces");
   const [editCategory, setEditCategory] = useState("Other");
@@ -110,7 +114,7 @@ export default function Home() {
 
         const { data: groceries, error: groceriesError } = await supabase
           .from("groceries")
-          .select("id, name, expiry, quantity, unit, category")
+          .select("id, name, expiry, quantity, unit, category, storage_location")
           .eq("household_id", membership.household_id)
           .order("expiry", { ascending: true });
         if (groceriesError) throw groceriesError;
@@ -166,8 +170,10 @@ export default function Home() {
     const { data, error } = await supabase
       .from("groceries")
       .insert({ household_id: householdId, name: name.trim(), expiry,
-                quantity: amount, unit, category })
-      .select("id, name, expiry, quantity, unit, category")
+                quantity: amount, unit, category, 
+                storage_location: "fridge",
+               })
+      .select("id, name, expiry, quantity, unit, category, storage_location")
       .single();
     setSaving(false);
     if (error) {
@@ -207,6 +213,7 @@ export default function Home() {
     setEditQuantity(String(food.quantity ?? 1));
     setEditUnit(food.unit ?? "pieces");
     setEditCategory(food.category ?? "Other");
+    setEditStorageLocation(food.storage_location ?? "fridge");
 
     setDatabaseError("");
   }
@@ -239,10 +246,11 @@ export default function Home() {
           quantity: amount,
           unit: editUnit,
           category: editCategory,
+          storage_location: editStorageLocation,
         })
         .eq("id", editingFood.id)
         .eq("household_id", householdId)
-        .select("id, name, expiry, quantity, unit, category")
+        .select("id, name, expiry, quantity, unit, category, storage_location")
         .single();
 
       if (error) throw error;
@@ -265,86 +273,23 @@ export default function Home() {
     }
   }
 
-  function getStatus(date: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const expiryDate = new Date(date + "T00:00:00");
-    const days = Math.round(
-      (expiryDate.getTime() - today.getTime()) / 86400000
-    );
-
-    if (days < 0) return "Expired";
-    if (days === 0) return "Expires today";
-    if (days <= 3) return `Expiring in ${days} days`;
-    return `${days} days left`;
-  }
-
-  function getCategory(date: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const expiryDate = new Date(date + "T00:00:00");
-
-    const days = Math.round(
-      (expiryDate.getTime() - today.getTime()) / 86400000
-    );
-
-    if (days < 0) return "expired";
-    if (days <= 3) return "expiring";
-    return "fresh";
-  }
-
-  function getExpiryColor(date: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const expiryDate = new Date(date + "T00:00:00");
-
-    const days = Math.round(
-      (expiryDate.getTime() - today.getTime()) / 86400000
-    );
-
-    if (days < 0) return "text-red-600";
-    if (days <= 3) return "text-orange-600";
-    return "text-green-700";
-  }
-
-
-  const expiredFoods = foods.filter(
-    (food) => getCategory(food.expiry) === "expired"
+  const fridgeFoods = foods.filter(
+    (food) => (food.storage_location ?? "fridge") === "fridge"
   );
-
-  const expiringFoods = foods.filter(
-    (food) => getCategory(food.expiry) === "expiring"
-  );
-
-  const freshFoods = foods.filter(
-    (food) => getCategory(food.expiry) === "fresh"
-  );
-
-  const displayedFoods =
-    activeTab === "expired"
-      ? expiredFoods
-      : activeTab === "expiring"
-      ? expiringFoods
-      : freshFoods;
 
   if (loading) {
-    return <main className="min-h-screen bg-green-50 p-8 text-gray-900">Loading your fridge...</main>;
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#F6F2E9]">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#DED5C8] border-t-[#665548]" />
+          <p className="font-medium text-[#665548]">
+            Getting your fridge ready...
+          </p>
+        </div>
+      </main>
+    );
   }
 
-  async function handleLogout() {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      setDatabaseError("Could not log out. Please try again.");
-      return;
-    }
-
-    router.replace("/login");
-    router.refresh();
-  }
 
   return (
     <main className="min-h-screen bg-[#F6F2E9] p-4 text-gray-900 sm:p-8">
@@ -382,132 +327,20 @@ export default function Home() {
 
       <div className="mx-auto max-w-2xl">
     
+    {/* FridgePAL Header */}
     <div className="flex items-center justify-between gap-2 sm:gap-4">
-      <h1 className="whitespace-nowrap text-2xl font-bold tracking-tight text-green-900 sm:text-4xl">
+      <h1 className="whitespace-nowrap text-xl font-bold tracking-tight text-green-900 sm:text-4xl">
         fridge<span className="text-green-700">PAL</span> 🥬
-        </h1>
-      <div className="flex items-center gap-2">
-        <FridgePalTutorial />
-          <button
-            type="button"
-            onClick={() => void handleLogout()}
-            aria-label="Log out"
-            title="Log Out"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DED5C8] bg-white text-[#665548] shadow-sm transition hover:bg-[#F1EBE2] sm:h-auto sm:w-auto sm:gap-2 sm:px-4 sm:py-2"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
+      </h1>
 
-            <span className="hidden text-sm font-medium sm:inline">
-              Log Out
-            </span>
-          </button>
-        </div>
-      </div>
+      <InventoryHeaderButtons />
+    </div>
 
         <p className="mt-2 text-gray-600">
           Keep your groceries fresh and reduce food waste.
         </p>
 
-        <nav className="mt-6 flex gap-6 border-b border-gray-200 pb-3">
-          <a
-            href="/"
-            className="border-b-2 border-[#665548] pb-2 font-semibold text-[#665548]"
-          >
-            🥬 My Fridge
-          </a>
-
-          <a
-            href="/household"
-            className="pb-2 text-[#898078] hover:text-[#665548]"
-          >
-            👨‍👩‍👧‍👦 Household
-          </a>
-        </nav>
-
-        {householdId && (
-          <div 
-            id="tutorial-household"
-            className="mt-6 flex items-center gap-3 rounded-xl border border-[#DED5C8] bg-[#F1EBE2] p-4">
-            <span className="text-2xl">🏠</span>
-
-            <div>
-              <p className="text-xs font-medium uppercase text-green-700">
-                Current Household
-              </p>
-
-              <p className="text-lg font-semibold text-green-900">
-                {householdName || "Loading household..."}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* QUICK ADD SECTION */}
-        <div 
-        id="tutorial-quick-add"
-        className="mt-8 rounded-xl bg-white p-6 shadow">
-          <h2 className="mb-2 text-2xl font-semibold text-gray-900">
-            🌱 Quick Add
-          </h2>
-
-          <p className="mb-5 text-sm text-gray-500">
-            Quickly add your household's saved products.
-            Expiry dates are calculated automatically.
-          </p>
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {quickAddPresets.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => quickAddPreset(preset)}
-                className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-[#D8CFC3] bg-[#F7F3ED] p-4 text-center transition hover:border-[#B5A58F] hover:bg-[#EFE7DC]"
-              >
-                <PresetImage
-                  imagePath={preset.image_path}
-                  name={preset.name}
-                />
-
-                <p className="text-sm font-semibold text-gray-900">
-                  {preset.name}
-                </p>
-
-                <p className="mt-1 text-xs text-gray-500">
-                  {preset.days_after_opening} days after opening
-                </p>
-              </button>
-            ))}
-
-            <button
-              type="button"
-              onClick={() => router.push("/quick-add")}
-              className="flex min-h-40 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-4 text-center hover:bg-gray-50"
-            >
-              <span className="mb-2 text-3xl text-gray-400">
-                +
-              </span>
-
-              <p className="flex min-h-40 flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#C9BDAF] bg-white p-4 text-center transition hover:bg-[#F7F3ED]">
-                Create Preset
-              </p>
-            </button>
-          </div>
-        </div>
+      <KitchenNavigation />
 
         <div
             id="tutorial-manual-add"
@@ -608,115 +441,14 @@ export default function Home() {
           </button>
         </div>
 
-        <h2 className="mb-4 mt-8 text-2xl font-semibold">
-          My Fridge ({foods.length} items)
-        </h2>
-
-        <div 
-        id="tutorial-expiry"
-        className="mb-6 mt-4 grid grid-cols-3 gap-3">
-          <button
-            onClick={() => setActiveTab("expired")}
-            className={`rounded-xl p-4 text-center ${
-              activeTab === "expired"
-                ? "border-2 border-red-500 bg-red-100"
-                : "bg-white"
-            }`}
-          >
-            <p className="text-2xl font-bold text-red-600">
-              {expiredFoods.length}
-            </p>
-            <p className="text-sm">Expired</p>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("expiring")}
-            className={`rounded-xl p-4 text-center ${
-              activeTab === "expiring"
-                ? "border-2 border-orange-500 bg-orange-100"
-                : "bg-white"
-            }`}
-          >
-            <p className="text-2xl font-bold text-orange-600">
-              {expiringFoods.length}
-            </p>
-            <p className="text-sm">Expiring Soon</p>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("fresh")}
-            className={`rounded-xl p-4 text-center ${
-              activeTab === "fresh"
-                ? "border-2 border-green-500 bg-green-100"
-                : "bg-white"
-            }`}
-          >
-            <p className="text-2xl font-bold text-green-700">
-              {freshFoods.length}
-            </p>
-            <p className="text-sm">Fresh</p>
-          </button>
-        </div>
-
-        {foods.length === 0 && (
-          <p className="text-gray-500">
-            Your fridge is empty. Add your first item!
-          </p>
-        )}
-
-      {displayedFoods.length === 0 && (
-        <p className="rounded-xl bg-white p-6 text-center text-gray-500">
-          No groceries in this category!
-        </p>
-      )}
-
-    <div
-      id="tutorial-grocery-list"
-      className="min-h-16 rounded-xl"
-    >
-      {[...displayedFoods]
-        .sort((a, b) => a.expiry.localeCompare(b.expiry))
-        .map((food) => (
-          <div
-            key={food.id}
-            className="mb-3 flex items-center justify-between rounded-xl bg-white p-4 shadow"
-          >
-            <div>
-              <h3 className="font-semibold">{food.name}</h3>
-              <p className="text-sm text-gray-600">
-                {food.quantity ?? 1} {food.unit ?? "piece"}
-                {" · "}
-                {food.category ?? "Uncategorised"}
-              </p>
-              <p className="text-sm text-gray-500">
-                Expiry: {food.expiry}
-              </p>
-              <p className={`text-sm font-medium ${getExpiryColor(food.expiry)}`}>
-                {getStatus(food.expiry)}
-              </p>
-
-            </div>
-            
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              onClick={() => startEditing(food)}
-              disabled={saving}
-              className="rounded bg-blue-100 px-3 py-2 text-sm text-blue-700 hover:bg-blue-200"
-            >
-              ✏️ Edit
-            </button>
-
-            <button
-              onClick={() => void removeFood(food.id)}
-              disabled={saving}
-              className="rounded bg-red-100 px-3 py-2 text-sm text-red-700 hover:bg-red-200"
-            >
-              Remove
-            </button>
-          </div>
-          </div>
-        ))}
-        </div>
+        {/* Fridge Inventory */}
+        <GroceryInventory
+          items={fridgeFoods}
+          title="🧊 My Fridge"
+          saving={saving}
+          onEdit={startEditing}
+          onRemove={(id) => void removeFood(id)}
+        />
 
         {editingFood && (
           <div className="mt-6 rounded-xl border-2 border-green-300 bg-white p-6 shadow">
@@ -788,6 +520,26 @@ export default function Home() {
                   <option value="Meat & Seafood">🥩 Meat & Seafood</option>
                   <option value="Drinks">🥤 Drinks</option>
                   <option value="Other">🍱 Other</option>
+                </select>
+              </div>
+
+              {/* Storage Location */}
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Storage Location
+                </label>
+
+                <select
+                  value={editStorageLocation}
+                  onChange={(e) =>
+                    setEditStorageLocation(
+                      e.target.value as "fridge" | "cupboards"
+                    )
+                  }
+                  className="w-full rounded border border-[#DED5C8] bg-white p-3"
+                >
+                  <option value="fridge">🧊 Fridge</option>
+                  <option value="cupboards">🗄️ Cupboards</option>
                 </select>
               </div>
 
