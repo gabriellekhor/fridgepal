@@ -19,31 +19,44 @@ Through this project, I wanted to better understand how product decisions, user 
 - **Shared Household Inventory:** Allow household members to access and update the same grocery inventory across devices.
 - **Household Management:** Create households and invite members using invitation codes.
 - **Automated Push Notifications:** Receive reminders when groceries are approaching their expiry dates.
+- **Customisable Quick Add Presets:** Allow households to save frequently used products with their own storage rules.
 - **Progressive Web App (PWA):** Install FridgePal directly onto a phone's Home Screen.
 
-## 🚀 Latest Updates — October 2026
+## 🚀 Latest Updates — November 2026
 
-I've continued developing FridgePal with a focus on improving usability, reducing manual data entry, and making the application more adaptable to different households.
+### 🎮 Interactive Kitchen Homepage
+- A cosy, illustrated kitchen featuring a clickable fridge and cupboards.
+- Navigate directly to each storage location by interacting with the illustration.
+- Mobile-friendly interface with a cream-and-espresso colour palette.
 
-### 1. Customisable Quick Add Presets
-- Introduced a Quick Add feature that allows households to save frequently used products with their own storage rules.
-- Users can customise product names, quantities, categories, and recommended storage periods after opening.
-- Added support for uploading product images to make groceries easier to identify.
-- Users can create, edit, and delete their own presets.
-- Selecting a preset automatically fills in the grocery details and calculates an expiry date.
+### 🧊 Fridge & Cupboard Inventory Management
+- Track refrigerated groceries and pantry essentials separately.
+- Add, edit and remove items from either storage location.
+- Move groceries between the fridge and cupboards.
+- View inventory items sorted by expiry date.
 
-### 2. Improved Grocery Management
-- Added an Edit Grocery function so users can correct product details without deleting and re-adding items.
-- Redesigned the grocery entry interface with separate Quick Add and Manual Add sections for easier navigation.
+### 🧺 Combined Kitchen Inventory
+- View groceries across both storage locations in one place.
+- Filter items by **Expired**, **Expiring Soon** and **Fresh**.
+- Identify each grocery's storage location.
+- Manage groceries without switching between inventory pages.
 
-### 3. Improved Household Customisation
-- Quick Add presets are shared among members of the same household.
-- Different households can maintain their own product shortcuts and storage preferences.
+### 🌱 Customisable Quick Add Presets
+- Create, edit and delete household-specific product presets.
+- Upload custom product images.
+- Automatically calculate expiry dates based on the number of days after opening.
+- Select a preset to prefill the grocery-entry form.
 
-### What's Next?
-- Introduce an opening-date selector for more accurate expiry calculations.
-- Explore barcode or receipt scanning to further reduce manual entry.
-- Continue improving the user experience based on household feedback.
+### 🔔 Expiry Notifications
+- Manage expiry notification settings.
+- Receive reminders about groceries approaching expiry.
+- Test push notifications directly from the application.
+
+### 🐶 Improved User Experience
+- Redesigned mobile-friendly interface.
+- Custom illustrated kitchen featuring two adorable dogs.
+- Interactive guided tutorial to help new users discover FridgePal's features.
+- Household-based inventory sharing.
 
 ## Tech Stack
 
@@ -52,6 +65,7 @@ I've continued developing FridgePal with a focus on improving usability, reducin
 | **Next.js (TypeScript)** | Built the web application and user interface |
 | **Supabase** | Managed user authentication and stored shared household inventory data |
 | **Vercel** | Hosted the application and automated daily expiry reminders |
+| **Driver.js** | Used to build the interactive tutorial |
 
 FridgePal was also developed as a Progressive Web App (PWA), allowing users to install it on their phones and receive push notifications.
 
