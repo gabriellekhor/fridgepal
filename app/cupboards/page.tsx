@@ -293,6 +293,50 @@ async function removeItem(id: number) {
 
   return (
     <main className="min-h-dvh bg-[#F6F2E9] p-4 text-gray-900 sm:p-8">
+
+    {/* Household Database Connection Status */}
+    <div className="mx-auto mb-4 max-w-2xl">
+      {error ? (
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+          <span className="text-lg text-red-600">!</span>
+          <div>
+            <p className="text-sm font-medium text-red-700">
+              Could not connect to your household database
+            </p>
+            <p className="text-xs text-red-600">
+              {error}
+            </p>
+          </div>
+        </div>
+      ) : householdId ? (
+        <div className="flex items-center gap-3 rounded-xl border border-[#DED5C8] bg-[#F1EBE2] p-4">
+          <span className="text-lg text-[#665548]">✓</span>
+
+          <div>
+            <p className="text-sm font-medium text-[#665548]">
+              Connected to your household database!
+            </p>
+            <p className="text-xs text-[#897968]">
+              Your groceries are synced and ready.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 rounded-xl border border-[#DED5C8] bg-[#F1EBE2] p-4">
+          <span className="text-lg text-[#665548]">◌</span>
+
+          <div>
+            <p className="text-sm font-medium text-[#665548]">
+              Connecting to Supabase...
+            </p>
+            <p className="text-xs text-[#897968]">
+              Getting your household ready.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+
       <div className="mx-auto max-w-2xl">
 
         <button
@@ -396,12 +440,6 @@ async function removeItem(id: number) {
             </button>
           </div>
         </div>
-
-        {error && (
-          <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </p>
-        )}
 
         {/* Cupboard Inventory */}
         <GroceryInventory
