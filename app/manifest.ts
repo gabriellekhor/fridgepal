@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "FridgePal",
     description:
       "Track your household groceries and reduce food waste.",
-    start_url: "/",
+    start_url: "/kitchen",
     scope: "/",
     display: "standalone",
     background_color: "#f0fdf4",
